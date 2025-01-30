@@ -1,3 +1,5 @@
+using Microsoft.EntityFrameworkCore;
+using Wl_labb2.Data;
 
 namespace Wl_labb2
 {
@@ -14,6 +16,13 @@ namespace Wl_labb2
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            //
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+            builder.Services.AddDbContext<AppDbContext> (options =>
+            options.UseSqlServer (connectionString));
+
+
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -27,25 +36,6 @@ namespace Wl_labb2
 
             app.UseAuthorization();
 
-            var summaries = new[]
-            {
-                "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-            };
-
-            app.MapGet("/weatherforecast", (HttpContext httpContext) =>
-            {
-                var forecast = Enumerable.Range(1, 5).Select(index =>
-                    new WeatherForecast
-                    {
-                        Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                        TemperatureC = Random.Shared.Next(-20, 55),
-                        Summary = summaries[Random.Shared.Next(summaries.Length)]
-                    })
-                    .ToArray();
-                return forecast;
-            })
-            .WithName("GetWeatherForecast")
-            .WithOpenApi();
 
             app.Run();
         }
