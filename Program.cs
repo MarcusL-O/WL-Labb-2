@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Wl_labb2.Data;
 using Wl_labb2.Models;
+using Wl_labb2.Services;
 
 namespace Wl_labb2
 {
@@ -18,80 +19,70 @@ namespace Wl_labb2
             builder.Services.AddSwaggerGen();
 
             //
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-            builder.Services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(connectionString));
-
+            builder.Services.AddSingleton<MongoDbService>();
 
             var app = builder.Build();
 
             //CRUD
+             var mongoService = app.Services.GetRequiredService<MongoDbService>();
 
             //Hämta alla snusprodukter
-            app.MapGet("/snus", async (AppDbContext db) =>
-            await db.SnusItems.ToListAsync());
+            app.MapGet("/snus", async () =>
+            {
+                var snusList = await mongoService.GetAllAsync();
+                return Results.Ok(snusList);
+            });
 
             //Hämta en specefik snus
-            app.MapGet("/snus/{id}", async (int id, AppDbContext db) =>
+            app.MapGet("/snus/{id}", async (string id) =>
             {
-                var snus = await db.SnusItems.FindAsync(id);
-
+                var snus = await mongoService.GetByIdAsync(id);
                 if (snus == null)
                 {
                     return Results.NotFound();
                 }
                 return Results.Ok(snus);
+
             });
 
-            //Skapa en specefik Snus
-            app.MapPost("/snus", async (Snus snus, AppDbContext db) =>
+            //Skapa en ny Snus
+            app.MapPost("/snus", async (Snus snus) =>
             {
-                db.SnusItems.Add(snus);
-                await db.SaveChangesAsync();
+                await mongoService.CreateAsync(snus);
                 return Results.Created($"/snus/{snus.Id}", snus);
             });
 
             //Uppdatera en snus
-            app.MapPut("/snus/{id}", async (int id, Snus updatedSnus, AppDbContext db) =>
+            app.MapPut("/snus/{id}", async (string id, Snus updatedSnus) =>
             {
-                var snus = await db.SnusItems.FindAsync(id);
-
-                if (snus == null)
+                var existingSnus = await mongoService.GetByIdAsync(id);
+                if (existingSnus == null)
                 {
                     return Results.NotFound();
                 }
 
-                snus.Name = updatedSnus.Name;
-                snus.Description = updatedSnus.Description;
-                snus.Type = updatedSnus.Type;
-
-                await db.SaveChangesAsync();
-                return Results.NoContent(); 
+                updatedSnus.Id = id;
+                await mongoService.UpdateAsync(id, updatedSnus);
+                return Results.Ok();
             });
 
             //Deleta en snus
-            app.MapDelete("/snus/{id}", async (int id, AppDbContext db) =>
+            app.MapDelete("/snus/{id}", async (string id) =>
             {
-                var snus = await db.SnusItems.FindAsync(id);
-
-                if (snus == null)
+                var existingSnus = await mongoService.GetByIdAsync(id);
+                if (existingSnus == null)
                 {
                     return Results.NotFound();
                 }
 
-                db.SnusItems.Remove(snus);
-                await db.SaveChangesAsync();
+                await mongoService.DeleteAsync(id);
                 return Results.NoContent();
 
             });
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
+            //tog bort if så att den alltid körs
+            app.UseSwagger();
+            app.UseSwaggerUI();
 
             app.UseHttpsRedirection();
 
