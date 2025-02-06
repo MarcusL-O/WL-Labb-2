@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-using Wl_labb2.Data;
 using Wl_labb2.Models;
 using Wl_labb2.Services;
 
@@ -18,7 +16,7 @@ namespace Wl_labb2
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            //
+            //Connects to MongoDB
             builder.Services.AddSingleton<MongoDbService>();
 
             var app = builder.Build();
@@ -83,7 +81,6 @@ namespace Wl_labb2
 
             });
 
-            //tog bort if så att den alltid körs
             app.UseSwagger();
             app.UseSwaggerUI();
 
