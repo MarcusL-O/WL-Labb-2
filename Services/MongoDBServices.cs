@@ -1,7 +1,6 @@
-﻿using Microsoft.Extensions.Options;
-using MongoDB.Driver;
+﻿using MongoDB.Driver;
 using Wl_labb2.Models;
-
+using Microsoft.Extensions.Configuration;
 
 namespace Wl_labb2.Services
 {
@@ -11,8 +10,14 @@ namespace Wl_labb2.Services
 
         public MongoDbService(IConfiguration config)
         {
-            var mongoClient = new MongoClient(config["MongoDB:ConnectionString"]);
-            var mongoDatabase = mongoClient.GetDatabase(config["MongoDB:DatabaseName"]);
+            var connectionString = Environment.GetEnvironmentVariable("MongoDB_ConnectionString")
+                                   ?? config["MongoDB:ConnectionString"]; // 🔥 Läser både från Azure och lokalt
+
+            var databaseName = Environment.GetEnvironmentVariable("MongoDB_DatabaseName")
+                               ?? config["MongoDB:DatabaseName"];
+
+            var mongoClient = new MongoClient(connectionString);
+            var mongoDatabase = mongoClient.GetDatabase(databaseName);
             _snusCollection = mongoDatabase.GetCollection<Snus>("SnusItems");
         }
 

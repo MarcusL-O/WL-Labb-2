@@ -23,8 +23,11 @@ namespace Wl_labb2
 
             var app = builder.Build();
 
+            //Startsida för mitt API
+            app.MapGet("/", () => "Välkommen till mitt API, Använd /swagger för API-dokumentation.");
+
             //CRUD
-             var mongoService = app.Services.GetRequiredService<MongoDbService>();
+            var mongoService = app.Services.GetRequiredService<MongoDbService>();
 
             //Hämta alla snusprodukter
             app.MapGet("/snus", async () =>
